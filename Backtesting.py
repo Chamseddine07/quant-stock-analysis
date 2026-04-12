@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-df = yf.download("AAPL", start = "2015-01-01", end = "2024-01-01")
+df = yf.download("AAPL", start = "2015-01-01", end = "2026-04-01")
 df["Log Return"] = np.log(df["Close"]/df["Close"].shift(1))
 
 train = df.iloc[:int(len(df)*0.7)]
@@ -42,11 +42,11 @@ plt.title("Backtesting - Train vs Test")
 plt.legend()
 plt.show()
 
-"""
+
 best_sharpe = 0
 best_short = 0
 best_long = 0
-
+"""
 for short in range(5, 50):
     for long in range (20, 200):
         if long <= short:
@@ -61,9 +61,10 @@ for short in range(5, 50):
 print(best_sharpe, best_long, best_short)
 """
 
-train_results, train_sharpe = run_strategy(train, 19, 22)
-test_results, test_sharpe = run_strategy(test, 19, 22)
+train_results, train_sharpe = run_strategy(train, 9, 20)
+test_results, test_sharpe = run_strategy(test, 9, 20)
 print(train_sharpe, test_sharpe)
+
 
 plt.figure(figsize=(12,5))
 plt.plot(train_results["Cumulative Market"], color="steelblue", alpha = 1, label="Train Market")
