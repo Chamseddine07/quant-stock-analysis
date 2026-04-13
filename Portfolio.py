@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 tickers = ["TSLA", "NVDA", "GC=F", "^GSPC"]
-df = yf.download(tickers, start="2015-01-01", end="2024-01-01")
+df = yf.download(tickers, start="2015-01-01", end="2026-04-12")
 df = df["Close"]
 returns = np.log(df/df.shift(1))
 weights = np.array([0.25, 0.25, 0.25, 0.25])

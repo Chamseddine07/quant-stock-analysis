@@ -1,0 +1,84 @@
+import pandas as pd
+import yfinance as yf
+import numpy as np 
+import matplotlib.pyplot as plt
+
+tickers = ["TSLA", "NVDA", "GOOGL", "AAPL", "^GSPC", "GC=F", "SI=F", "CL=F", "^TNX", "^IRX"]
+df = yf.download(tickers, start = "2015-01-01", end="2024-01-01")
+
+df = df["Close"]
+returns = np.log(df/df.shift(1))
+returns = returns.dropna()
+
+n_portfolios = 10000
+
+portfolio_returns = np.zeros(10000)
+portfolio_volatilities = np.zeros(10000)
+portfolio_sharpes = np.zeros(10000)
+portfolio_weights = np.zeros((10000, 10))
+
+np.random.seed(42)
+for i in range(n_portfolios):
+    weights = np.random.random(len(tickers))
+    weights = weights / weights.sum()
+    port_return = np.dot(weights, returns.mean() * 252)
+    port_volatility = np.sqrt(np.dot(weights.T, np.dot(returns.cov() * 252, weights)))
+    port_sharpes = (port_return - 0.05)/port_volatility
+
+    portfolio_returns[i] = port_return
+    portfolio_volatilities[i] = port_volatility
+    portfolio_sharpes[i] = port_sharpes
+    portfolio_weights[i] = weights
+
+    best_idx = np.argmax(portfolio_sharpes)
+    best_weights = portfolio_weights[best_idx]
+    best_return = portfolio_returns[best_idx]
+    best_volatility = portfolio_volatilities[best_idx]
+    best_sharpe = portfolio_sharpes[best_idx]
+
+print(f"The best Sharpe Ratio is {best_sharpe:.2f}")
+print(f"The best Return is {best_return:.2f}")
+print(f"The best Volatility Ratio is {best_volatility:.2f}")
+
+for j in range(len(tickers)):
+    print(f"The best weight for {tickers[j]} is {best_weights[j]:.2f}")
+
+plt.scatter(portfolio_volatilities, portfolio_returns, c=portfolio_sharpes, cmap="viridis", alpha=0.5)
+plt.scatter(best_volatility, best_return, color="red", marker="*", s=200, label="Optimal Portfolio")
+plt.colorbar(label="Sharpe Ratio")
+plt.title("The Efficient Frontier")
+plt.legend()
+plt.show()
+
+weights = best_weights
+portfolio_returns_series = returns.dot(best_weights)
+mu = portfolio_returns_series.mean() * 252
+sigma = portfolio_returns_series.std() * np.sqrt(252) 
+
+S0 = 10000
+T = 1
+dt = 1/252
+N = 252
+n_sims = 500
+simulation = np.zeros((N, n_sims))
+
+for i in range(n_sims):
+    portfolio = [S0]
+    for t in range(N-1):
+        portfolio.append(portfolio[-1] * np.exp((mu - (np.square(sigma)/2)) * dt + sigma*np.sqrt(dt)*np.random.standard_normal()))
+    simulation[:, i] = portfolio
+
+plt.figure(figsize = (12, 5))
+plt.plot(simulation, color = "steelblue", alpha = 0.05)
+plt.plot(np.percentile(simulation, 5, axis = 1), color = "red", alpha = 1, label = "5th percentilie")
+plt.plot(np.percentile(simulation, 95, axis = 1), color = "green", alpha = 1, label = "95th percentilie")
+plt.plot(np.median(simulation, axis = 1), color="black", alpha = 1, label = "Median")
+plt.title("10000 Portfolio Monte Carlo Simulation")
+plt.legend()
+plt.show()
+
+final_values = simulation[-1, :]
+
+print(f"5th percentile: ${np.percentile(final_values, 5):.2f}")
+print(f"95th percentile: ${np.percentile(final_values, 95):.2f}")
+print(f"Median: ${np.median(final_values):.2f}")
